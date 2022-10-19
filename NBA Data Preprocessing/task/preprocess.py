@@ -47,8 +47,29 @@ def feature_data(df):
 
     return df
 
+def multicol_data(df):
+    X = df.drop(columns='salary')
+    y = df.salary
+    m = X.corr(numeric_only=True)
+    pairs = []
+    for i in range(m.shape[0]):
+        for j in range(i + 1, m.shape[0]):
+            if abs(m.iloc[i][j]) > 0.5:
+                pairs.append((i, j))
+    for p in pairs:
+        col0 = m.columns[p[0]]
+        col1 = m.columns[p[1]]
+        r0 = y.corr(X[col0])
+        r1 = y.corr(X[col1])
+        if r0 < r1:
+            df = df.drop(columns=col0)
+        else:
+            df = df.drop(columns=col1)
+    return df
+
+
 pd.options.display.max_columns = None
 df = clean_data(data_path)
 df = feature_data(df)
-
-print(df.head())
+df = multicol_data(df)
+print(list(df.select_dtypes('number').drop(columns='salary')))
