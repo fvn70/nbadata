@@ -32,7 +32,23 @@ def clean_data(path):
 
     return df
 
+def feature_data(df):
+    df['version'] = [pd.to_datetime('20'+d[-2:]) for d in df.version]
+    df['age'] = df.version.dt.year - df.b_day.dt.year
+    df['experience'] = df.version.dt.year - df.draft_year.dt.year
+    df['bmi'] = df.weight / df.height / df.height
+    df = df.drop(columns=['version', 'b_day', 'draft_year', 'weight', 'height'])
+
+    high_card_list = []
+    for col in df.columns:
+        if df[col].dtype != 'float64' and df[col].unique().size >= 50:
+            high_card_list.append(col)
+    df = df.drop(columns=high_card_list)
+
+    return df
 
 pd.options.display.max_columns = None
 df = clean_data(data_path)
-print(df[['b_day', 'team', 'height', 'weight', 'country', 'draft_round', 'draft_year', 'salary']].head())
+df = feature_data(df)
+
+print(df.head())
