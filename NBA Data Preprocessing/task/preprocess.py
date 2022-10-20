@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 import requests
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import make_column_transformer
 
 # Check for ../Data directory presence
 if not os.path.exists('../Data'):
@@ -67,9 +69,33 @@ def multicol_data(df):
             df = df.drop(columns=col1)
     return df
 
+def transform_data(df):
+    X = df.drop(columns='salary')
+    y = df.salary
+    ss = StandardScaler()
+
+    num_feat_df = X.select_dtypes('number')  # numerical features
+    num_scale_df = ss.fit_transform(num_feat_df)
+
+    cat_feat_df = X.select_dtypes('object')
+    ohe = OneHotEncoder()
+    cat_ohe = ohe.fit_transform(cat_feat_df)
+    cat = ohe.categories_
+    cat_lst = [cat[i][j] for i in range(len(cat)) for j in range(cat[i].size)]
+
+    X = pd.DataFrame(num_scale_df, columns=num_feat_df.columns)
+    X[cat_lst] = cat_ohe.toarray()
+
+    return X, y
 
 pd.options.display.max_columns = None
 df = clean_data(data_path)
 df = feature_data(df)
 df = multicol_data(df)
-print(list(df.select_dtypes('number').drop(columns='salary')))
+X, y = transform_data(df)
+
+answer = {
+    'shape': [X.shape, y.shape],
+    'features': list(X.columns),
+    }
+print(answer)
